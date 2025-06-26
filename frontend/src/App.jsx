@@ -14,6 +14,7 @@ import HostDashboard from "./pages/HostDashboard.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import BecomeHostPage from "./pages/BecomeHostPage";
 import "./index.css";
 import "./App.css";
 
@@ -65,6 +66,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/become"
+              element={
+                <ProtectedRoute>
+                  <BecomeHostPage />
                 </ProtectedRoute>
               }
             />

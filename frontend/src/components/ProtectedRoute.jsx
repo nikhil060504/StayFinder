@@ -10,8 +10,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if trying to access host routes without host role
-  if (location.pathname.startsWith("/host") && user.role !== "host") {
+  // Allow /host/become for non-hosts, block other /host routes for non-hosts
+  if (
+    location.pathname.startsWith("/host") &&
+    location.pathname !== "/host/become" &&
+    user.role !== "host"
+  ) {
     return <Navigate to="/profile" replace />;
   }
 

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
+console.log("Rendering HostDashboard");
+
 const HostDashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();

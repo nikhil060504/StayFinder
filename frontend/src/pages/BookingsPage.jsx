@@ -3,6 +3,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Link } from "react-router-dom";
+
+console.log("Fetching data for HostDashboard/BookingsPage");
 
 const BookingsPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -170,12 +173,12 @@ const BookingsPage = () => {
             </p>
             {filter === "all" && (
               <div className="mt-6">
-                <button
-                  onClick={() => navigate("/")}
+                <Link
+                  to="/"
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                 >
                   Browse Properties
-                </button>
+                </Link>
               </div>
             )}
           </div>
@@ -295,23 +298,19 @@ const BookingsPage = () => {
                   {/* Actions */}
                   <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                     <div className="flex space-x-3">
-                      <button
-                        onClick={() =>
-                          navigate(`/listings/${booking.listing?._id}`)
-                        }
+                      <Link
+                        to={`/listings/${booking.listing?._id}`}
                         className="text-blue-600 hover:text-blue-700 font-medium text-sm"
                       >
                         View Property
-                      </button>
+                      </Link>
                       {booking.status === "confirmed" && (
-                        <button
-                          onClick={() =>
-                            navigate(`/bookings/${booking._id}/details`)
-                          }
+                        <Link
+                          to={`/bookings/${booking._id}/details`}
                           className="text-gray-600 hover:text-gray-700 font-medium text-sm"
                         >
                           View Details
-                        </button>
+                        </Link>
                       )}
                     </div>
 
