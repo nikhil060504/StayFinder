@@ -18,7 +18,7 @@ const BecomeHostPage = () => {
       await api.put("/auth/become-host");
       await loadUser();
       setSuccess(true);
-      window.location.reload();
+      loadUser();
     } catch (err) {
       setError("Failed to become a host. Please try again.");
     } finally {
