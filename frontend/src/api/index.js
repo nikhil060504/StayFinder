@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const baseURL =
+  import.meta.env.VITE_API_URL || "https://stayfinder-dewy.onrender.com/api";
+console.log("API Base URL:", baseURL);
+
 const api = axios.create({
-  baseURL: "https://stayfinder-dewy.onrender.com/api",
+  baseURL: baseURL,
   withCredentials: true,
 });
 
