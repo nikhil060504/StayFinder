@@ -80,7 +80,14 @@ export const AuthProvider = ({ children }) => {
   const loadUser = async () => {
     try {
       const response = await api.get("/auth/me");
-      dispatch({ type: "LOAD_USER", payload: response.data });
+      const user = response.data;
+      // Update storage with latest user data
+      if (localStorage.getItem("token")) {
+        localStorage.setItem("user", JSON.stringify(user));
+      } else if (sessionStorage.getItem("token")) {
+        sessionStorage.setItem("user", JSON.stringify(user));
+      }
+      dispatch({ type: "LOAD_USER", payload: user });
     } catch (error) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");

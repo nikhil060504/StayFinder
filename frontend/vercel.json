@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/cancellation-and-refund",
+      "destination": "/cancellation-and-refund.html"
+    },
+    {
+      "source": "/terms-and-conditions",
+      "destination": "/terms-and-conditions.html"
+    },
+    {
+      "source": "/shipping",
+      "destination": "/shipping.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy-policy.html"
+    },
+    {
+      "source": "/contact-us",
+      "destination": "/contact-us.html"
+    }
+  ]
+}

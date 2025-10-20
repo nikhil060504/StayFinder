@@ -14,13 +14,17 @@ const BecomeHostPage = () => {
   const handleBecomeHost = async () => {
     setLoading(true);
     setError("");
+    setSuccess(false);
     try {
       await api.put("/auth/become-host");
       await loadUser();
       setSuccess(true);
-      window.location.reload(true);
+      setTimeout(() => {
+        navigate("/host/dashboard");
+      }, 100); // Small delay to ensure state updates are processed
     } catch (err) {
       setError("Failed to become a host. Please try again.");
+      setSuccess(false);
     } finally {
       setLoading(false);
     }
