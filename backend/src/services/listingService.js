@@ -17,7 +17,8 @@ const getListingsService = async (query) => {
     page = 1,
     limit = 10,
   } = query;
-  const dbQuery = { isPublished: true };
+  // Only return active listings
+  const dbQuery = { status: "active" };
   if (location) {
     dbQuery.$or = [
       { "location.city": { $regex: location, $options: "i" } },
