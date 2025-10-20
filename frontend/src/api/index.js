@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const baseURL =
-  import.meta.env.VITE_API_URL || "https://stayfinder-dewy.onrender.com/api";
+// Force new build - API configuration for production
+const baseURL = "https://stayfinder-dewy.onrender.com/api";
 console.log("API Base URL:", baseURL);
+console.log("Environment:", import.meta.env.MODE);
 
 const api = axios.create({
   baseURL: baseURL,
