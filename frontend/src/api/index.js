@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-//  baseURL: "https://stayfinder-dewy.onrender.com/api",
-baseUrl:"http://localhost:5000/api",
+  baseURL: "https://stayfinder-dewy.onrender.com/api",
   withCredentials: true,
 });
 
