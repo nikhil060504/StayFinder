@@ -9,13 +9,27 @@ const CreateListingPage = () => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    price: "",
-    location: "",
+    // Location fields (backend requires nested fields)
+    locationAddress: "",
+    locationCity: "",
+    locationState: "",
+    locationCountry: "",
+    lat: "",
+    lng: "",
+    // Price fields (backend requires nested fields)
+    priceBase: "",
+    currency: "USD",
+    cleaningFee: "",
+    serviceFee: "",
+    // Property meta
+    propertyType: "house",
+    roomType: "entire",
     maxGuests: "",
     bedrooms: "",
     bathrooms: "",
     amenities: [],
-    images: [],
+    // Comma-separated image URLs (backend requires http(s) URLs)
+    imageUrls: "",
   });
 
   const amenityOptions = [
@@ -48,16 +62,8 @@ const CreateListingPage = () => {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    // In a real app, you would upload these files to a storage service
-    // and get back URLs. For now, we'll create object URLs
-    const imageUrls = files.map((file) => URL.createObjectURL(file));
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...imageUrls],
-    }));
-  };
+  // For now, accept comma-separated image URLs that are already hosted (http/https)
+  // Example: https://img1.jpg, https://img2.jpg
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,13 +71,38 @@ const CreateListingPage = () => {
       setLoading(true);
       setError(null);
 
-      // Convert string values to numbers where needed
+      // Build payload matching backend model schema
+      const images = (formData.imageUrls || "")
+        .split(",")
+        .map((u) => u.trim())
+        .filter((u) => /^https?:\/\//i.test(u));
+
       const payload = {
-        ...formData,
-        price: parseFloat(formData.price),
-        maxGuests: parseInt(formData.maxGuests),
-        bedrooms: parseInt(formData.bedrooms),
-        bathrooms: parseInt(formData.bathrooms),
+        title: formData.title,
+        description: formData.description,
+        location: {
+          address: formData.locationAddress,
+          city: formData.locationCity,
+          state: formData.locationState,
+          country: formData.locationCountry,
+          coordinates: {
+            lat: Number(formData.lat),
+            lng: Number(formData.lng),
+          },
+        },
+        price: {
+          base: Number(formData.priceBase),
+          currency: formData.currency || "USD",
+          cleaningFee: formData.cleaningFee ? Number(formData.cleaningFee) : 0,
+          serviceFee: formData.serviceFee ? Number(formData.serviceFee) : 0,
+        },
+        images,
+        amenities: formData.amenities,
+        propertyType: formData.propertyType,
+        roomType: formData.roomType,
+        maxGuests: Number(formData.maxGuests),
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(formData.bathrooms),
       };
 
       await api.post("/listings", payload);
@@ -109,12 +140,12 @@ const CreateListingPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Location
+              Address
             </label>
             <input
               type="text"
-              name="location"
-              value={formData.location}
+              name="locationAddress"
+              value={formData.locationAddress}
               onChange={handleInputChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -123,18 +154,170 @@ const CreateListingPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Price per night ($)
+              City
+            </label>
+            <input
+              type="text"
+              name="locationCity"
+              value={formData.locationCity}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              State
+            </label>
+            <input
+              type="text"
+              name="locationState"
+              value={formData.locationState}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Country
+            </label>
+            <input
+              type="text"
+              name="locationCountry"
+              value={formData.locationCountry}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Latitude
             </label>
             <input
               type="number"
-              name="price"
-              value={formData.price}
+              name="lat"
+              value={formData.lat}
+              onChange={handleInputChange}
+              required
+              step="any"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Longitude
+            </label>
+            <input
+              type="number"
+              name="lng"
+              value={formData.lng}
+              onChange={handleInputChange}
+              required
+              step="any"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Price per night
+            </label>
+            <input
+              type="number"
+              name="priceBase"
+              value={formData.priceBase}
               onChange={handleInputChange}
               required
               min="0"
               step="0.01"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Currency
+            </label>
+            <select
+              name="currency"
+              value={formData.currency}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="USD">USD</option>
+              <option value="INR">INR</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cleaning fee
+            </label>
+            <input
+              type="number"
+              name="cleaningFee"
+              value={formData.cleaningFee}
+              onChange={handleInputChange}
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Service fee
+            </label>
+            <input
+              type="number"
+              name="serviceFee"
+              value={formData.serviceFee}
+              onChange={handleInputChange}
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Property type
+            </label>
+            <select
+              name="propertyType"
+              value={formData.propertyType}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="house">House</option>
+              <option value="apartment">Apartment</option>
+              <option value="condo">Condo</option>
+              <option value="villa">Villa</option>
+              <option value="cabin">Cabin</option>
+              <option value="studio">Studio</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Room type
+            </label>
+            <select
+              name="roomType"
+              value={formData.roomType}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="entire">Entire place</option>
+              <option value="private">Private room</option>
+              <option value="shared">Shared room</option>
+            </select>
           </div>
 
           <div>
@@ -222,27 +405,16 @@ const CreateListingPage = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Images
+            Image URLs (comma-separated)
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="w-full"
+          <textarea
+            name="imageUrls"
+            value={formData.imageUrls}
+            onChange={handleInputChange}
+            rows="2"
+            placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {formData.images.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {formData.images.map((image, index) => (
-                <img
-                  key={index}
-                  src={image}
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-md"
-                />
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end space-x-4">
