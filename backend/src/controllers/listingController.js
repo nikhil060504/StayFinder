@@ -15,11 +15,19 @@ const createListing = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log("Validation errors:", errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
+
+    console.log(
+      "Creating listing with data:",
+      JSON.stringify(req.body, null, 2)
+    );
     const listing = await createListingService(req.user, req.body);
+    console.log("Listing created successfully:", listing._id);
     res.status(201).json(listing);
   } catch (error) {
+    console.error("Error creating listing:", error);
     res.status(400).json({ message: error.message });
   }
 };

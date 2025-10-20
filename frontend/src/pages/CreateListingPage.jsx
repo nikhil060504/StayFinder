@@ -26,6 +26,7 @@ const CreateListingPage = () => {
     roomType: "entire",
     maxGuests: "",
     bedrooms: "",
+    beds: "",
     bathrooms: "",
     amenities: [],
     // Comma-separated image URLs (backend requires http(s) URLs)
@@ -102,6 +103,7 @@ const CreateListingPage = () => {
         roomType: formData.roomType,
         maxGuests: Number(formData.maxGuests),
         bedrooms: Number(formData.bedrooms),
+        beds: Number(formData.beds),
         bathrooms: Number(formData.bathrooms),
       };
 
@@ -352,6 +354,21 @@ const CreateListingPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Beds
+            </label>
+            <input
+              type="number"
+              name="beds"
+              value={formData.beds}
+              onChange={handleInputChange}
+              required
+              min="1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Bathrooms
             </label>
             <input
@@ -360,7 +377,7 @@ const CreateListingPage = () => {
               value={formData.bathrooms}
               onChange={handleInputChange}
               required
-              min="0"
+              min="1"
               step="0.5"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

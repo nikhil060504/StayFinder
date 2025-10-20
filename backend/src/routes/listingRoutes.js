@@ -29,6 +29,7 @@ const listingValidation = [
     "villa",
     "condo",
     "studio",
+    "cabin",
   ]),
   check("roomType", "Room type is required").isIn([
     "entire",
@@ -39,6 +40,8 @@ const listingValidation = [
   check("bedrooms", "Number of bedrooms is required").isNumeric(),
   check("beds", "Number of beds is required").isNumeric(),
   check("bathrooms", "Number of bathrooms is required").isNumeric(),
+  check("images", "At least one image is required").isArray({ min: 1 }),
+  check("images.*", "Each image must be a valid URL").isURL(),
 ];
 
 // Public routes
