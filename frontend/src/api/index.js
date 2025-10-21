@@ -5,6 +5,9 @@ const baseURL = "https://stayfinder-dewy.onrender.com/api";
 console.log("API Base URL:", baseURL);
 console.log("Environment:", import.meta.env.MODE);
 
+// Ensure we're using the deployed API URL
+window.API_BASE_URL = baseURL;
+
 const api = axios.create({
   baseURL: baseURL,
   withCredentials: true,

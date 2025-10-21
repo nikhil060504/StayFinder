@@ -25,6 +25,7 @@ app.use(helmet());
 // CORS configuration - Allow multiple origins
 const allowedOrigins = [
   "https://stay-finder-silk.vercel.app",
+  "https://stay-finder-sq8m.vercel.app", // Add your current Vercel domain
   "http://localhost:3000",
   "http://localhost:5173", // Vite dev server
 ];
