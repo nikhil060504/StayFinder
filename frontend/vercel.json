@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://stayfinder-dewy.onrender.com/api/:path*"
-    },
-    {
       "source": "/cancellation-and-refund",
       "destination": "/cancellation-and-refund.html"
     },

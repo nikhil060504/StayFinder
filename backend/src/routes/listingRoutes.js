@@ -41,7 +41,6 @@ const listingValidation = [
   check("beds", "Number of beds is required").isNumeric(),
   check("bathrooms", "Number of bathrooms is required").isNumeric(),
   check("images", "At least one image is required").isArray({ min: 1 }),
-  check("images.*", "Each image must be a valid URL").isURL(),
 ];
 
 // Public routes

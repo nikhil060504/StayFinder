@@ -75,18 +75,25 @@ const listingSchema = new mongoose.Schema(
         min: 0,
       },
     },
-    images: [
-      {
+    images: [{
+      url: {
         type: String,
         required: true,
-        validate: {
-          validator: function (v) {
-            return /^https?:\/\/.+/.test(v);
-          },
-          message: "Image URL must be a valid URL",
-        },
+        trim: true
       },
-    ],
+      publicId: {
+        type: String,
+        required: true,
+        trim: true
+      },
+      format: {
+        type: String,
+        required: true,
+        trim: true
+      },
+      width: Number,
+      height: Number
+    }],
     amenities: [
       {
         type: String,

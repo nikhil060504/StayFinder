@@ -1,11 +1,11 @@
 import axios from "axios";
 
-// Force new build - API configuration for production
-const baseURL = "https://stayfinder-dewy.onrender.com/api";
+// Use localhost for development
+const baseURL = "http://localhost:5000/api";
 console.log("API Base URL:", baseURL);
 console.log("Environment:", import.meta.env.MODE);
 
-// Ensure we're using the deployed API URL
+// Set global API URL
 window.API_BASE_URL = baseURL;
 
 const api = axios.create({

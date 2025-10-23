@@ -49,11 +49,16 @@ const PropertyCard = ({ property }) => {
         <div className="relative">
           <img
             src={
-              property.images?.[0] ||
-              "https://via.placeholder.com/400x300?text=No+Image"
+              property.images?.[0]?.url || 
+              property.images?.[0] || 
+              "/images/no-image-placeholder.jpg"
             }
             alt={property.title}
             className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/images/no-image-placeholder.jpg";
+            }}
           />
           <div className="absolute top-3 right-3">
             <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-semibold text-gray-700 capitalize">

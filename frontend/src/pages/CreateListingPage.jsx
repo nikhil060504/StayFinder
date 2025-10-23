@@ -6,6 +6,7 @@ const CreateListingPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -29,8 +30,6 @@ const CreateListingPage = () => {
     beds: "",
     bathrooms: "",
     amenities: [],
-    // Comma-separated image URLs (backend requires http(s) URLs)
-    imageUrls: "",
   });
 
   const amenityOptions = [
@@ -63,8 +62,130 @@ const CreateListingPage = () => {
     }));
   };
 
-  // For now, accept comma-separated image URLs that are already hosted (http/https)
-  // Example: https://img1.jpg, https://img2.jpg
+  // Handle image file uploads
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    // Limit to 2 files at a time to prevent payload issues
+    const selectedFiles = files.slice(0, 2);
+    
+    // Check file sizes
+    const maxSizeInBytes = 200 * 1024; // 200KB
+    const oversizedFiles = selectedFiles.filter(file => file.size > maxSizeInBytes);
+    
+    if (oversizedFiles.length > 0) {
+      setError("Images exceeding 200KB will be compressed");
+    }
+    
+    const uploadPromises = selectedFiles.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          // Create an image element to get dimensions
+          const img = new Image();
+          img.onload = () => {
+            // Create canvas for resizing
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set maximum dimensions - smaller to reduce payload size
+            const maxWidth = 300;
+            const maxHeight = 200;
+            
+            // Calculate new dimensions while maintaining aspect ratio
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+              if (width > maxWidth) {
+                height *= maxWidth / width;
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width *= maxHeight / height;
+                height = maxHeight;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Get compressed data URL (JPEG at 10% quality for much smaller size)
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.1);
+            
+            // Just store the data URL directly
+            resolve(compressedDataUrl);
+          };
+          img.onerror = () => reject("Failed to load image");
+          img.src = event.target.result;
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(uploadPromises)
+      .then(newImages => {
+        // Filter out any rejected promises
+        const validImages = newImages.filter(img => img);
+        if (validImages.length > 0) {
+          setUploadedImages(prev => [...prev, ...validImages]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Upload error:", err);
+        if (!error) {
+          setError("Failed to process image uploads");
+        }
+        setLoading(false);
+      });
+  };
+
+  const removeImage = (index) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+    // Upload image to Cloudinary
+  const uploadImageToCloudinary = async (base64Image) => {
+    try {
+      const cloudName = 'dwjnqydpl'; // Directly using the cloud name
+      const uploadPreset = 'stayfinder_uploads'; // Directly using the upload preset
+      
+      const formData = new FormData();
+      formData.append('file', base64Image);
+      formData.append('upload_preset', uploadPreset);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Cloudinary upload error:', error);
+        throw new Error(error.message || 'Failed to upload image to Cloudinary');
+      }
+
+      const data = await response.json();
+      console.log('Image uploaded successfully:', data.secure_url);
+      return data.secure_url;
+    } catch (error) {
+      console.error('Error in uploadImageToCloudinary:', error);
+      throw new Error('Failed to upload image. Please try again.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,12 +193,19 @@ const CreateListingPage = () => {
       setLoading(true);
       setError(null);
 
-      // Build payload matching backend model schema
-      const images = (formData.imageUrls || "")
-        .split(",")
-        .map((u) => u.trim())
-        .filter((u) => /^https?:\/\//i.test(u));
+      if (uploadedImages.length === 0) {
+        setError("Please upload at least one image");
+        setLoading(false);
+        return;
+      }
 
+      // Upload images to Cloudinary first
+      const imageUploadPromises = uploadedImages.map(async (base64Image) => {
+        return await uploadImageToCloudinary(base64Image);
+      });
+      
+      const imageUrls = await Promise.all(imageUploadPromises);
+      
       const payload = {
         title: formData.title,
         description: formData.description,
@@ -97,7 +225,7 @@ const CreateListingPage = () => {
           cleaningFee: formData.cleaningFee ? Number(formData.cleaningFee) : 0,
           serviceFee: formData.serviceFee ? Number(formData.serviceFee) : 0,
         },
-        images,
+        images: imageUrls,
         amenities: formData.amenities,
         propertyType: formData.propertyType,
         roomType: formData.roomType,
@@ -107,10 +235,13 @@ const CreateListingPage = () => {
         bathrooms: Number(formData.bathrooms),
       };
 
-      await api.post("/listings", payload);
+      console.log('Sending payload to server:', JSON.stringify(payload, null, 2));
+      const response = await api.post("/listings", payload);
+      console.log('Server response:', response.data);
       navigate("/host/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create listing");
+      console.error('Error in form submission:', err);
+      setError(err.response?.data?.message || err.message || "Failed to create listing");
     } finally {
       setLoading(false);
     }
@@ -422,16 +553,52 @@ const CreateListingPage = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Image URLs (comma-separated)
+            Upload Images
           </label>
-          <textarea
-            name="imageUrls"
-            value={formData.imageUrls}
-            onChange={handleInputChange}
-            rows="2"
-            placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex items-center">
+            <label className="flex items-center px-4 py-2 bg-white text-blue-600 rounded-md border border-blue-600 cursor-pointer hover:bg-blue-50">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11v5m4-5v5" />
+              </svg>
+              Choose Images
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
+            <span className="ml-3 text-sm text-gray-500">Upload property images (JPG, PNG)</span>
+          </div>
+          
+          {/* Image preview section */}
+          {uploadedImages.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Images ({uploadedImages.length})</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {uploadedImages.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={image} 
+                      alt={`Property image ${index + 1}`} 
+                      className="w-full h-32 object-cover rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end space-x-4">

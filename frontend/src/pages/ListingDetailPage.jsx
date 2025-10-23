@@ -206,11 +206,16 @@ const ListingDetailPage = () => {
               <div className="relative">
                 <img
                   src={
-                    listing.images?.[currentImageIndex] ||
-                    "https://via.placeholder.com/800x400?text=No+Image"
+                    (listing.images?.[currentImageIndex]?.url || 
+                     listing.images?.[currentImageIndex] || 
+                     "/images/no-image-placeholder.jpg")
                   }
                   alt={listing.title}
                   className="w-full h-96 object-cover rounded-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/images/no-image-placeholder.jpg";
+                  }}
                 />
 
                 {listing.images && listing.images.length > 1 && (
@@ -280,9 +285,13 @@ const ListingDetailPage = () => {
                       }`}
                     >
                       <img
-                        src={image}
+                        src={typeof image === 'object' ? image.url : image}
                         alt={`${listing.title} ${index + 1}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/images/no-image-placeholder.jpg";
+                        }}
                       />
                     </button>
                   ))}

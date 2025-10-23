@@ -23,9 +23,26 @@ const createListing = async (req, res) => {
       "Creating listing with data:",
       JSON.stringify(req.body, null, 2)
     );
-    const listing = await createListingService(req.user, req.body);
-    console.log("Listing created successfully:", listing._id);
-    res.status(201).json(listing);
+    
+    // Log the incoming request body for debugging
+    console.log('Raw request body:', req.body);
+    
+    // Validate required fields
+    if (!req.body.images || !Array.isArray(req.body.images) || req.body.images.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required' });
+    }
+    
+    try {
+      const listing = await createListingService(req.user, req.body);
+      console.log("Listing created successfully:", listing._id);
+      res.status(201).json(listing);
+    } catch (error) {
+      console.error('Error in createListingService:', error);
+      res.status(400).json({ 
+        message: error.message || 'Failed to create listing',
+        details: error.errors ? Object.values(error.errors).map(e => e.message) : undefined
+      });
+    }
   } catch (error) {
     console.error("Error creating listing:", error);
     res.status(400).json({ message: error.message });

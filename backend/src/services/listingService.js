@@ -1,8 +1,56 @@
 const Listing = require("../models/Listing");
 
+const { uploadImage } = require('../utils/cloudinary');
+
 const createListingService = async (user, body) => {
-  const listingData = { ...body, host: user._id };
-  return Listing.create(listingData);
+  try {
+    const { images, ...listingData } = body;
+    
+    // Process images (upload base64 or use existing URLs)
+    const uploadedImages = [];
+    for (const image of images) {
+      // If it's a base64 image, upload it to Cloudinary
+      if (typeof image === 'string' && (image.startsWith('data:image') || image.startsWith('blob:'))) {
+        try {
+          const result = await uploadImage(image);
+          uploadedImages.push({
+            url: result.url,
+            publicId: result.public_id,
+            format: result.format,
+            width: result.width,
+            height: result.height
+          });
+        } catch (error) {
+          console.error('Error uploading image to Cloudinary:', error);
+          throw new Error('Failed to upload one or more images');
+        }
+      } 
+      // If it's already a URL, use it directly
+      else if (typeof image === 'string' && (image.startsWith('http://') || image.startsWith('https://'))) {
+        uploadedImages.push({
+          url: image,
+          publicId: `manual_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          format: image.split('.').pop().split('?')[0] || 'jpg',
+          width: 1200, // Default dimensions
+          height: 800
+        });
+      }
+    }
+
+    // Create listing with image URLs
+    const newListing = new Listing({
+      ...listingData,
+      images: uploadedImages,
+      host: user._id,
+      status: 'active'
+    });
+
+    await newListing.save();
+    return newListing;
+  } catch (error) {
+    console.error('Error in createListingService:', error);
+    throw new Error(error.message || 'Failed to create listing');
+  }
 };
 
 const getListingsService = async (query) => {
