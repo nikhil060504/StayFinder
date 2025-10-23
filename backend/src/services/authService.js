@@ -8,17 +8,34 @@ const generateToken = (id) => {
 };
 
 const registerService = async (body) => {
-  const { email, password, firstName, lastName, phoneNumber } = body;
+  const { email, password, firstName, lastName, phoneNumber, role = 'user' } = body;
+  
+  console.log('Starting registration for email:', email);
+  
+  // Check if user already exists
   const userExists = await User.findOne({ email });
-  if (userExists) throw new Error("User already exists");
+  if (userExists) {
+    console.log('Registration failed: User already exists with email:', email);
+    throw new Error("User already exists");
+  }
+  
+  console.log('Creating new user...');
+  
+  // Create the user (password will be hashed by the pre-save hook)
   const user = await User.create({
     email,
     password,
     firstName,
     lastName,
     phoneNumber,
+    role,
   });
+  
+  console.log('User created successfully:', user.email);
+  
+  // Generate JWT token
   const token = generateToken(user._id);
+  
   return {
     _id: user._id,
     email: user.email,
@@ -32,11 +49,28 @@ const registerService = async (body) => {
 
 const loginService = async (body) => {
   const { email, password } = body;
-  const user = await User.findOne({ email });
-  if (!user) throw new Error("Invalid credentials");
+  console.log('Login attempt for email:', email);
+  
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) {
+    console.log('User not found with email:', email);
+    throw new Error("Invalid credentials");
+  }
+  
+  console.log('Found user:', user.email);
+  console.log('Comparing password...');
+  
   const isMatch = await user.comparePassword(password);
-  if (!isMatch) throw new Error("Invalid credentials");
+  console.log('Password match result:', isMatch);
+  
+  if (!isMatch) {
+    console.log('Invalid password for user:', email);
+    throw new Error("Invalid credentials");
+  }
+  
   const token = generateToken(user._id);
+  console.log('Login successful for user:', email);
+  
   return {
     _id: user._id,
     email: user.email,

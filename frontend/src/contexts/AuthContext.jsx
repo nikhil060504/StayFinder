@@ -148,8 +148,18 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || "Registration failed";
+      let errorMessage = "Registration failed";
+      
+      // Handle validation errors from the server
+      if (error.response?.data?.errors) {
+        // Get the first error message from the array of validation errors
+        errorMessage = error.response.data.errors[0].msg || errorMessage;
+      } 
+      // Handle other types of errors
+      else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
       return { success: false, error: errorMessage };
     }

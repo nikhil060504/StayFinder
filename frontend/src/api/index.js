@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Use localhost for development
+// Use local backend for testing
 const baseURL = "http://localhost:5000/api";
 console.log("API Base URL:", baseURL);
 console.log("Environment:", import.meta.env.MODE);

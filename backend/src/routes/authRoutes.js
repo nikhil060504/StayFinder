@@ -19,6 +19,8 @@ const registerValidation = [
   }),
   check("firstName", "First name is required").not().isEmpty(),
   check("lastName", "Last name is required").not().isEmpty(),
+  check("role").optional().isIn(['user', 'host']).withMessage('Invalid role'),
+  check('phoneNumber').optional().isMobilePhone().withMessage('Invalid phone number')
 ];
 
 const loginValidation = [

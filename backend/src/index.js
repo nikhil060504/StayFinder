@@ -22,10 +22,12 @@ connectDB();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - Allow only localhost origins
+// CORS configuration - Allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173", // Vite dev server
+  "https://stayfinder-dewy.onrender.com", // Deployed frontend
+  "http://localhost:5000"  // Local backend for development
 ];
 
 // Add environment variable origins if they exist
