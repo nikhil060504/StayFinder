@@ -3,15 +3,27 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 // Import database connection
 const connectDB = require("./config/db");
 
+// Import models (to register them with Mongoose)
+require("./models/User");
+require("./models/Listing");
+require("./models/Booking");
+require("./models/Review");
+require("./models/HostVerification");
+
 // Import routes
 const authRoutes = require("./routes/authRoutes");
 const listingRoutes = require("./routes/listingRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const assistantRoutes = require("./routes/assistantRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const hostVerificationRoutes = require("./routes/hostVerificationRoutes");
 
 // Initialize Express app
 const app = express();
@@ -22,12 +34,21 @@ connectDB();
 // Security middleware
 app.use(helmet());
 
+// Body parser middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Cookie parser middleware
+app.use(cookieParser());
+
 // CORS configuration - Allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001", // Vite dev server (new port)
   "http://localhost:5173", // Vite dev server
-  "https://stayfinder-dewy.onrender.com", // Deployed frontend
-  "http://localhost:5000"  // Local backend for development
+  "http://127.0.0.1:5173", // Alternative Vite dev server
+  "http://localhost:5000", // Local backend for development
+  "http://localhost:5001", // Local backend for development (new port)
 ];
 
 // Add environment variable origins if they exist
@@ -57,11 +78,15 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting - More lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === "production" ? 100 : 1000, // 1000 requests for dev, 100 for production
   message: "Too many requests from this IP, please try again later.",
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === "/health";
+  },
 });
 app.use(limiter);
 
@@ -85,6 +110,10 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/assistant", assistantRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/host-verification", hostVerificationRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {
@@ -95,6 +124,9 @@ app.get("/", (req, res) => {
       auth: "/api/auth",
       listings: "/api/listings",
       bookings: "/api/bookings",
+      assistant: "/api/assistant",
+      payments: "/api/payments",
+      reviews: "/api/reviews",
       health: "/health",
     },
   });

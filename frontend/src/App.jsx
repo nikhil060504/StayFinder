@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
+import ChatButton from "./components/Chat/ChatButton.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import ListingDetailPage from "./pages/ListingDetailPage.jsx";
 import CreateListingPage from "./pages/CreateListingPage.jsx";
@@ -15,6 +16,9 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BecomeHostPage from "./pages/BecomeHostPage";
+import HostVerificationForm from "./pages/HostVerificationForm";
+import VerificationPendingPage from "./pages/VerificationPendingPage";
+import AdminHostVerificationPage from "./pages/AdminHostVerificationPage";
 import "./index.css";
 import "./App.css";
 
@@ -77,10 +81,35 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/host/apply"
+              element={
+                <ProtectedRoute>
+                  <HostVerificationForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/verification-pending"
+              element={
+                <ProtectedRoute>
+                  <VerificationPendingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/host-verification"
+              element={
+                <ProtectedRoute>
+                  <AdminHostVerificationPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
         <Footer />
+        <ChatButton />
       </div>
     </Router>
   </AuthProvider>

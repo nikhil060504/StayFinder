@@ -3,11 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHostMenuOpen, setIsHostMenuOpen] = useState(false);
   const hostMenuRef = useRef(null);
   const navigate = useNavigate();
+
+  // Close menus when user role changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+    setIsHostMenuOpen(false);
+  }, [user?.role]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -62,7 +68,27 @@ const Navbar = () => {
                   >
                     Bookings
                   </Link>
-                  {user?.role === "host" ? (
+                  {user?.role === "admin" ? (
+                    <Link
+                      to="/admin/host-verification"
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1"
+                    >
+                      <span>Admin Panel</span>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                        />
+                      </svg>
+                    </Link>
+                  ) : user?.role === "host" ? (
                     <div className="relative" ref={hostMenuRef}>
                       <button
                         className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1"
@@ -129,10 +155,10 @@ const Navbar = () => {
                     </div>
                   ) : (
                     <Link
-                      to="/host/become"
+                      to="/host/apply"
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition flex items-center space-x-1"
                     >
-                      <span>Become a Host</span>
+                      <span>Apply for Host</span>
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -150,7 +176,12 @@ const Navbar = () => {
                   )}
                 </>
               )}
-              {isAuthenticated ? (
+              {loading ? (
+                // Skeleton loader while auth is bootstrapping
+                <div className="flex items-center space-x-2 ml-4">
+                  <div className="w-9 h-9 bg-gray-200 rounded-full animate-pulse"></div>
+                </div>
+              ) : isAuthenticated ? (
                 <div className="relative group ml-4">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -242,7 +273,7 @@ const Navbar = () => {
             >
               Home
             </Link>
-            {isAuthenticated && (
+            {!loading && isAuthenticated && (
               <>
                 <Link
                   to="/bookings"
@@ -251,7 +282,28 @@ const Navbar = () => {
                 >
                   Bookings
                 </Link>
-                {user?.role === "host" ? (
+                {user?.role === "admin" ? (
+                  <Link
+                    to="/admin/host-verification"
+                    className="bg-red-600 hover:bg-red-700 text-white block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                      />
+                    </svg>
+                    <span>Admin Panel</span>
+                  </Link>
+                ) : user?.role === "host" ? (
                   <>
                     <Link
                       to="/listings/new"
@@ -296,11 +348,11 @@ const Navbar = () => {
                   </>
                 ) : (
                   <Link
-                    to="/host/become"
+                    to="/host/apply"
                     className="bg-blue-600 hover:bg-blue-700 text-white block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <span>Become a Host</span>
+                    <span>Apply for Host</span>
                     <svg
                       className="w-5 h-5"
                       fill="none"
@@ -318,7 +370,12 @@ const Navbar = () => {
                 )}
               </>
             )}
-            {isAuthenticated ? (
+            {loading ? (
+              <div className="px-3 py-2 space-y-2">
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : isAuthenticated ? (
               <>
                 <Link
                   to="/profile"

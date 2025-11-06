@@ -1,56 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import StarRating from "./StarRating";
+import VerifiedBadge from "./VerifiedBadge";
 
 const PropertyCard = ({ property }) => {
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <svg
-          key={i}
-          className="w-4 h-4 text-yellow-400 fill-current"
-          viewBox="0 0 20 20"
-        >
-          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-        </svg>
-      );
-    }
-
-    if (hasHalfStar) {
-      stars.push(
-        <svg
-          key="half"
-          className="w-4 h-4 text-yellow-400 fill-current"
-          viewBox="0 0 20 20"
-        >
-          <defs>
-            <linearGradient id="half">
-              <stop offset="50%" stopColor="currentColor" />
-              <stop offset="50%" stopColor="transparent" />
-            </linearGradient>
-          </defs>
-          <path
-            fill="url(#half)"
-            d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"
-          />
-        </svg>
-      );
-    }
-
-    return stars;
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
       <Link to={`/listings/${property._id}`}>
         <div className="relative">
           <img
             src={
-              property.images?.[0]?.url || 
-              property.images?.[0] || 
+              property.images?.[0]?.url ||
+              property.images?.[0] ||
               "/images/no-image-placeholder.jpg"
             }
             alt={property.title}
@@ -67,10 +28,8 @@ const PropertyCard = ({ property }) => {
           </div>
           {property.averageRating > 0 && (
             <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center">
-              <div className="flex items-center mr-1">
-                {renderStars(property.averageRating)}
-              </div>
-              <span className="text-xs font-semibold text-gray-700">
+              <StarRating rating={property.averageRating} size="sm" />
+              <span className="text-xs font-semibold text-gray-700 ml-1">
                 {property.averageRating.toFixed(1)}
               </span>
             </div>
@@ -79,9 +38,16 @@ const PropertyCard = ({ property }) => {
 
         <div className="p-5">
           <div className="flex items-start justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
-              {property.title}
-            </h3>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                {property.title}
+              </h3>
+              {property.host?.isVerified && (
+                <div className="mt-1">
+                  <VerifiedBadge isVerified={true} size="sm" showText={true} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center text-gray-500 text-sm mb-3">
@@ -126,7 +92,7 @@ const PropertyCard = ({ property }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <span className="text-2xl font-bold text-gray-900">
                 ${property.price?.base}
@@ -141,6 +107,27 @@ const PropertyCard = ({ property }) => {
               )}
             </div>
           </div>
+
+          {property.carbonFootprint?.value > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-green-600 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-green-700">
+                  Carbon Footprint
+                </p>
+                <p className="text-sm font-bold text-green-600">
+                  {property.carbonFootprint.perNight}{" "}
+                  {property.carbonFootprint.unit}/night
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Link>
     </div>

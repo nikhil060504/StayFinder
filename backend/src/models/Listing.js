@@ -75,25 +75,27 @@ const listingSchema = new mongoose.Schema(
         min: 0,
       },
     },
-    images: [{
-      url: {
-        type: String,
-        required: true,
-        trim: true
+    images: [
+      {
+        url: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        publicId: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        format: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        width: Number,
+        height: Number,
       },
-      publicId: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      format: {
-        type: String,
-        required: true,
-        trim: true
-      },
-      width: Number,
-      height: Number
-    }],
+    ],
     amenities: [
       {
         type: String,
@@ -158,6 +160,40 @@ const listingSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "inactive", "suspended"],
       default: "active",
+    },
+    carbonFootprint: {
+      value: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      unit: {
+        type: String,
+        default: "kg CO2e",
+      },
+      perNight: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      calculatedAt: {
+        type: Date,
+      },
+    },
+    safetyScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    safetyStatus: {
+      type: String,
+      enum: ["safe", "moderate", "unsafe"],
+      default: "moderate",
+    },
+    safetyDetails: {
+      type: String,
+      default: "",
     },
   },
   {

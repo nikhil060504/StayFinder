@@ -48,6 +48,38 @@ const bookingSchema = new mongoose.Schema(
     paymentIntentId: {
       type: String,
     },
+    razorpayOrderId: {
+      type: String,
+    },
+    razorpayPaymentId: {
+      type: String,
+    },
+    razorpaySignature: {
+      type: String,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["razorpay", "stripe", "other"],
+      default: "razorpay",
+    },
+    // Host payment transfer details
+    hostPaymentTransferred: {
+      type: Boolean,
+      default: false,
+    },
+    hostEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    platformFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    transferredAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

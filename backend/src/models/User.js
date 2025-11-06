@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "host", "admin"],
       default: "user",
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     phoneNumber: {
       type: String,
       trim: true,
@@ -40,6 +44,35 @@ const userSchema = new mongoose.Schema(
     isEmailVerified: {
       type: Boolean,
       default: false,
+    },
+    // Host payment details
+    hostPaymentDetails: {
+      accountNumber: {
+        type: String,
+        trim: true,
+      },
+      panCard: {
+        type: String,
+        trim: true,
+        uppercase: true,
+      },
+      bankName: {
+        type: String,
+        trim: true,
+      },
+      ifscCode: {
+        type: String,
+        trim: true,
+        uppercase: true,
+      },
+      accountHolderName: {
+        type: String,
+        trim: true,
+      },
+      isVerified: {
+        type: Boolean,
+        default: false,
+      },
     },
   },
   {

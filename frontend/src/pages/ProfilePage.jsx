@@ -1,33 +1,10 @@
-import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import VerifiedBadge from "../components/VerifiedBadge";
 
 const ProfilePage = () => {
-  const { user, loadUser } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleBecomeHost = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setSuccess(false);
-      await api.put("/auth/become-host");
-      await loadUser(); // Reload user data to get updated role
-      setSuccess(true);
-      setTimeout(() => {
-        navigate("/host/dashboard"); // Redirect to host dashboard after becoming a host
-      }, 100); // Small delay to ensure state updates are processed
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to become a host");
-      setSuccess(false);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!user) {
     return <div className="max-w-xl mx-auto p-8">No user data found.</div>;
@@ -42,8 +19,13 @@ const ProfilePage = () => {
           {user?.lastName?.charAt(0)}
         </div>
         <div>
-          <div className="text-lg font-semibold">
-            {user?.firstName} {user?.lastName}
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-semibold">
+              {user?.firstName} {user?.lastName}
+            </div>
+            {user?.isVerified && (
+              <VerifiedBadge isVerified={true} size="md" showText={false} />
+            )}
           </div>
           <div className="text-gray-500">{user?.email}</div>
         </div>
@@ -51,36 +33,47 @@ const ProfilePage = () => {
       <div className="mb-4">
         <span className="font-semibold">Role:</span> {user?.role || "user"}
       </div>
+      {user?.role === "host" && (
+        <div className="mb-4">
+          <span className="font-semibold">Verification Status:</span>{" "}
+          {user?.isVerified ? (
+            <span className="text-green-600 font-medium">✅ Verified Host</span>
+          ) : (
+            <span className="text-yellow-600 font-medium">
+              ⏳ Pending Verification
+            </span>
+          )}
+        </div>
+      )}
 
       {user?.role === "user" ? (
         <div className="mb-4">
           <p className="text-gray-600 mb-4">
-            Want to earn by sharing your space? Become a host to list your
-            properties and manage bookings.
+            Want to earn by sharing your space? Apply to become a host to list
+            your properties and manage bookings.
           </p>
           <button
-            onClick={handleBecomeHost}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            onClick={() => {
+              console.log("Apply for Host button clicked");
+              navigate("/host/apply");
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition flex items-center space-x-2"
           >
-            <span>{loading ? "Processing..." : "Become a Host"}</span>
-            {!loading && (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            )}
+            <span>Apply for Host</span>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
+            </svg>
           </button>
-          {error && <div className="text-red-500 mt-2">{error}</div>}
         </div>
       ) : null}
       {user?.role === "host" && (

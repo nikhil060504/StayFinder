@@ -3,6 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api";
 import LoadingSpinner from "../components/LoadingSpinner";
+import StarRating from "../components/StarRating";
+import HostContactModal from "../components/HostContactModal";
+import VerifiedBadge from "../components/VerifiedBadge";
+import { initiateRazorpayPayment } from "../utils/razorpay";
 
 const ListingDetailPage = () => {
   const { id } = useParams();
@@ -16,12 +20,10 @@ const ListingDetailPage = () => {
     checkOut: "",
     guests: 1,
   });
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     loadListing();
@@ -38,34 +40,73 @@ const ListingDetailPage = () => {
     }
   };
 
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
-    setShowPaymentModal(true);
-  };
 
-  const handleMockPayment = async () => {
-    setPaymentLoading(true);
-    setPaymentError(null);
-    // Simulate payment delay
-    setTimeout(async () => {
+    try {
+      setPaymentLoading(true);
+      setPaymentError(null);
+
+      // Create booking first
+      const bookingResponse = await api.post("/bookings", {
+        listingId: id,
+        ...bookingData,
+      });
+
+      const bookingId = bookingResponse.data._id;
+      const totalPrice = calculateTotalPrice();
+
+      // Create payment order
+      const orderResponse = await api.post("/payments/create-order", {
+        bookingId,
+      });
+
+      // Initiate Razorpay payment
+      await initiateRazorpayPayment({
+        keyId: orderResponse.data.keyId,
+        orderId: orderResponse.data.orderId,
+        amount: totalPrice,
+        currency: "INR",
+        customerName: "Guest User",
+        customerEmail: "guest@stayfinder.com",
+        customerPhone: "9999999999",
+        onSuccess: async (paymentData) => {
+          try {
+            // Verify payment
+            await api.post("/payments/verify", {
+              orderId: orderResponse.data.orderId,
+              paymentId: paymentData.razorpay_payment_id,
+              signature: paymentData.razorpay_signature,
+            });
+
+            setPaymentLoading(false);
+            alert("Payment successful! Your booking is confirmed.");
+            setTimeout(() => {
+              navigate("/bookings");
+            }, 2000);
+          } catch (err) {
+            setPaymentError(
+              "Payment verification failed. Please contact support."
+            );
+            setPaymentLoading(false);
+          }
+        },
+        onError: (error) => {
+          setPaymentError(error);
+          setPaymentLoading(false);
+        },
+      });
+    } catch (err) {
+      setPaymentError(
+        err.response?.data?.message ||
+          "Failed to create booking. Please try again."
+      );
       setPaymentLoading(false);
-      setPaymentSuccess(true);
-      try {
-        await api.post("/bookings", {
-          listingId: id,
-          ...bookingData,
-        });
-        setShowPaymentModal(false);
-        alert("Booking request submitted successfully!");
-        // Optionally navigate to bookings page
-      } catch (err) {
-        setPaymentError("Failed to create booking. Please try again.");
-      }
-    }, 1200);
+    }
   };
 
   const calculateNights = () => {
@@ -85,26 +126,6 @@ const ListingDetailPage = () => {
     const serviceFee = listing.price.serviceFee || 0;
 
     return basePrice + cleaningFee + serviceFee;
-  };
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <svg
-          key={i}
-          className={`w-5 h-5 ${
-            i < fullStars ? "text-yellow-400" : "text-gray-300"
-          } fill-current`}
-          viewBox="0 0 20 20"
-        >
-          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-        </svg>
-      );
-    }
-    return stars;
   };
 
   if (loading) {
@@ -171,10 +192,8 @@ const ListingDetailPage = () => {
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             {listing.averageRating > 0 && (
               <div className="flex items-center">
-                <div className="flex items-center mr-1">
-                  {renderStars(listing.averageRating)}
-                </div>
-                <span className="font-medium">
+                <StarRating rating={listing.averageRating} size="md" />
+                <span className="font-medium ml-2">
                   {listing.averageRating.toFixed(1)}
                 </span>
               </div>
@@ -206,9 +225,9 @@ const ListingDetailPage = () => {
               <div className="relative">
                 <img
                   src={
-                    (listing.images?.[currentImageIndex]?.url || 
-                     listing.images?.[currentImageIndex] || 
-                     "/images/no-image-placeholder.jpg")
+                    listing.images?.[currentImageIndex]?.url ||
+                    listing.images?.[currentImageIndex] ||
+                    "/images/no-image-placeholder.jpg"
                   }
                   alt={listing.title}
                   className="w-full h-96 object-cover rounded-lg"
@@ -285,7 +304,7 @@ const ListingDetailPage = () => {
                       }`}
                     >
                       <img
-                        src={typeof image === 'object' ? image.url : image}
+                        src={typeof image === "object" ? image.url : image}
                         alt={`${listing.title} ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -338,7 +357,7 @@ const ListingDetailPage = () => {
 
             {/* Amenities */}
             {listing.amenities && listing.amenities.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h3 className="text-lg font-semibold mb-4">Amenities</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {listing.amenities.map((amenity, index) => (
@@ -360,6 +379,47 @@ const ListingDetailPage = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Carbon Footprint */}
+            {listing.carbonFootprint && listing.carbonFootprint.value > 0 && (
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-md p-6 border border-green-200">
+                <div className="flex items-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-green-600 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-green-900">
+                    Carbon Footprint
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">
+                      Total Emissions
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {listing.carbonFootprint.value}{" "}
+                      {listing.carbonFootprint.unit}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">Per Night</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {listing.carbonFootprint.perNight}{" "}
+                      {listing.carbonFootprint.unit}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-green-700 mt-4">
+                  ♻️ This property's carbon footprint is calculated based on its
+                  size, amenities, and location. Choose eco-friendly stays to
+                  reduce your environmental impact!
+                </p>
               </div>
             )}
           </div>
@@ -473,20 +533,25 @@ const ListingDetailPage = () => {
 
                 <button
                   type="submit"
-                  disabled={bookingLoading || !isAuthenticated}
+                  disabled={paymentLoading || !isAuthenticated}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {bookingLoading ? (
+                  {paymentLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                      Processing...
+                      Processing Payment...
                     </>
                   ) : !isAuthenticated ? (
                     "Login to Book"
                   ) : (
-                    "Reserve"
+                    "Reserve & Pay"
                   )}
                 </button>
+                {paymentError && (
+                  <div className="text-red-500 text-sm text-center mt-2">
+                    {paymentError}
+                  </div>
+                )}
 
                 {!isAuthenticated && (
                   <p className="text-sm text-gray-600 text-center">
@@ -502,64 +567,62 @@ const ListingDetailPage = () => {
                   </p>
                 )}
               </form>
+
+              {/* Host Information */}
+              {listing.host && (
+                <div className="mt-6 border-t pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Hosted by
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {listing.host.firstName} {listing.host.lastName}
+                      </p>
+                      {listing.host.isVerified && (
+                        <div className="mt-1">
+                          <VerifiedBadge
+                            isVerified={true}
+                            size="sm"
+                            showText={true}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Host Button */}
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowContactModal(true)}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773c.058.3.102.605.102.924 0 1.748.585 3.364 1.56 4.657l1.548.773a1 1 0 01.54 1.06l-.74 4.435a1 1 0 01-.986.836H3a1 1 0 01-1-1V3z" />
+                  </svg>
+                  Contact Host
+                </button>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  📞 Instant phone contact with property owner
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setShowPaymentModal(false)}
-              disabled={paymentLoading}
-            >
-              &times;
-            </button>
-            <h2 className="text-xl font-bold mb-4">Mock Payment</h2>
-            <div className="space-y-4">
-              <input
-                type="text"
-                placeholder="Card Number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                disabled={paymentLoading}
-              />
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  placeholder="MM/YY"
-                  className="w-1/2 px-3 py-2 border border-gray-300 rounded-md"
-                  disabled={paymentLoading}
-                />
-                <input
-                  type="text"
-                  placeholder="CVC"
-                  className="w-1/2 px-3 py-2 border border-gray-300 rounded-md"
-                  disabled={paymentLoading}
-                />
-              </div>
-              <button
-                onClick={handleMockPayment}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50"
-                disabled={paymentLoading}
-              >
-                {paymentLoading ? "Processing..." : "Pay & Reserve"}
-              </button>
-              {paymentError && (
-                <div className="text-red-500 text-sm text-center">
-                  {paymentError}
-                </div>
-              )}
-              {paymentSuccess && (
-                <div className="text-green-600 text-sm text-center">
-                  Payment successful! Booking created.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Contact Modal */}
+      <HostContactModal
+        listingId={id}
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+      />
     </div>
   );
 };

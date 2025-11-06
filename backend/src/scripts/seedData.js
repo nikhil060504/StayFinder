@@ -1,9 +1,9 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Listing = require("../models/Listing");
 const connectDB = require("../config/db");
+const { calculateCarbonFootprint } = require("../services/carbonService");
 
 const seedData = async () => {
   try {
@@ -17,12 +17,11 @@ const seedData = async () => {
     // Create sample users
     console.log("Creating sample users...");
 
-    const hashedPassword = await bcrypt.hash("password123", 10);
-
+    // Use plain password - the User model will hash it in the pre-save hook
     const users = await User.create([
       {
         email: "john.host@example.com",
-        password: hashedPassword,
+        password: "password123",
         firstName: "John",
         lastName: "Host",
         phoneNumber: "+1234567890",
@@ -30,7 +29,7 @@ const seedData = async () => {
       },
       {
         email: "jane.host@example.com",
-        password: hashedPassword,
+        password: "password123",
         firstName: "Jane",
         lastName: "Host",
         phoneNumber: "+1234567891",
@@ -38,7 +37,7 @@ const seedData = async () => {
       },
       {
         email: "mike.host@example.com",
-        password: hashedPassword,
+        password: "password123",
         firstName: "Mike",
         lastName: "Host",
         phoneNumber: "+1234567892",
@@ -46,7 +45,7 @@ const seedData = async () => {
       },
       {
         email: "user@example.com",
-        password: hashedPassword,
+        password: "password123",
         firstName: "Test",
         lastName: "User",
         phoneNumber: "+1234567893",
@@ -79,9 +78,21 @@ const seedData = async () => {
           serviceFee: 50,
         },
         images: [
-          "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800",
-          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-          "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800",
+            publicId: "miami_villa_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+            publicId: "miami_villa_2",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800",
+            publicId: "miami_villa_3",
+            format: "jpg",
+          },
         ],
         amenities: [
           "wifi",
@@ -98,7 +109,7 @@ const seedData = async () => {
         beds: 5,
         bathrooms: 3,
         averageRating: 4.8,
-        isPublished: true,
+        status: "active",
         availability: [
           {
             startDate: new Date(),
@@ -125,9 +136,21 @@ const seedData = async () => {
           serviceFee: 25,
         },
         images: [
-          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
-          "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
+            publicId: "ny_apartment_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
+            publicId: "ny_apartment_2",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
+            publicId: "ny_apartment_3",
+            format: "jpg",
+          },
         ],
         amenities: [
           "wifi",
@@ -143,7 +166,7 @@ const seedData = async () => {
         beds: 2,
         bathrooms: 2,
         averageRating: 4.5,
-        isPublished: true,
+        status: "active",
         availability: [
           {
             startDate: new Date(),
@@ -170,9 +193,21 @@ const seedData = async () => {
           serviceFee: 35,
         },
         images: [
-          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
-          "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
+            publicId: "aspen_cabin_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+            publicId: "aspen_cabin_2",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800",
+            publicId: "aspen_cabin_3",
+            format: "jpg",
+          },
         ],
         amenities: [
           "wifi",
@@ -189,7 +224,7 @@ const seedData = async () => {
         beds: 4,
         bathrooms: 2,
         averageRating: 4.9,
-        isPublished: true,
+        status: "active",
         availability: [
           {
             startDate: new Date(),
@@ -216,8 +251,16 @@ const seedData = async () => {
           serviceFee: 20,
         },
         images: [
-          "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800",
-          "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800",
+            publicId: "sf_studio_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800",
+            publicId: "sf_studio_2",
+            format: "jpg",
+          },
         ],
         amenities: ["wifi", "kitchen", "air-conditioning", "elevator"],
         propertyType: "studio",
@@ -227,7 +270,7 @@ const seedData = async () => {
         beds: 1,
         bathrooms: 1,
         averageRating: 4.3,
-        isPublished: true,
+        status: "active",
         availability: [
           {
             startDate: new Date(),
@@ -254,8 +297,16 @@ const seedData = async () => {
           serviceFee: 30,
         },
         images: [
-          "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
-          "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
+            publicId: "charleston_house_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
+            publicId: "charleston_house_2",
+            format: "jpg",
+          },
         ],
         amenities: ["wifi", "kitchen", "parking", "air-conditioning", "garden"],
         propertyType: "house",
@@ -265,7 +316,7 @@ const seedData = async () => {
         beds: 3,
         bathrooms: 2,
         averageRating: 4.7,
-        isPublished: true,
+        status: "active",
         availability: [
           {
             startDate: new Date(),
@@ -292,8 +343,16 @@ const seedData = async () => {
           serviceFee: 40,
         },
         images: [
-          "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
-          "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800",
+          {
+            url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+            publicId: "la_condo_1",
+            format: "jpg",
+          },
+          {
+            url: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800",
+            publicId: "la_condo_2",
+            format: "jpg",
+          },
         ],
         amenities: [
           "wifi",
@@ -322,6 +381,22 @@ const seedData = async () => {
 
     const listings = await Listing.create(sampleListings);
     console.log("Created listings:", listings.length);
+
+    // Calculate carbon footprint for each listing
+    console.log("Calculating carbon footprint for listings...");
+    for (const listing of listings) {
+      try {
+        const carbonData = await calculateCarbonFootprint(listing);
+        listing.carbonFootprint = carbonData;
+        await listing.save();
+        console.log(`✅ Carbon footprint calculated for: ${listing.title}`);
+      } catch (error) {
+        console.error(
+          `⚠️ Error calculating carbon for ${listing.title}:`,
+          error.message
+        );
+      }
+    }
 
     console.log("✅ Seed data created successfully!");
     console.log(

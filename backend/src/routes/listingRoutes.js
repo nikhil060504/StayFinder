@@ -7,6 +7,7 @@ const {
   updateListing,
   deleteListing,
   getHostListings,
+  getHostContact,
 } = require("../controllers/listingController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -45,6 +46,7 @@ const listingValidation = [
 
 // Public routes
 router.get("/", getListings);
+router.get("/:id/host-contact", getHostContact);
 router.get("/:id", getListing);
 
 // Protected routes

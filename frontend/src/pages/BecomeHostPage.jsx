@@ -5,7 +5,7 @@ import api from "../api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const BecomeHostPage = () => {
-  const { user, loadUser } = useAuth();
+  const { user, loadUser, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -15,17 +15,22 @@ const BecomeHostPage = () => {
     setLoading(true);
     setError("");
     setSuccess(false);
+
     try {
+      // First make the API call to update the role
       await api.put("/auth/become-host");
+
+      // Force refresh the user data from the server
       await loadUser();
+
+      // Set success state to show message
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/host/dashboard");
-      }, 100); // Small delay to ensure state updates are processed
     } catch (err) {
-      setError("Failed to become a host. Please try again.");
-      setSuccess(false);
-    } finally {
+      console.error("Become host error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to become a host. Please try again."
+      );
       setLoading(false);
     }
   };

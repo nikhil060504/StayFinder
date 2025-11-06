@@ -10,11 +10,11 @@ const RegisterPage = () => {
     password: "",
     confirmPassword: "",
     phoneNumber: "",
-    role: "user",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState([]);
+  const [registerRole, setRegisterRole] = useState("user"); // "user" or "admin"
   const { register, loading, error, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -101,6 +101,39 @@ const RegisterPage = () => {
               </div>
             )}
 
+            {/* Role Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Register as:
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="user"
+                    checked={registerRole === "user"}
+                    onChange={(e) => setRegisterRole(e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Regular User
+                  </span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="admin"
+                    checked={registerRole === "admin"}
+                    onChange={(e) => setRegisterRole(e.target.value)}
+                    className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Admin</span>
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
@@ -157,7 +190,11 @@ const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="john@example.com"
+                placeholder={
+                  registerRole === "admin"
+                    ? "admin@test.com"
+                    : "john@example.com"
+                }
               />
             </div>
 
@@ -177,25 +214,6 @@ const RegisterPage = () => {
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="+1 (555) 123-4567"
               />
-            </div>
-
-            <div>
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Account Type
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="user">Guest (Book properties)</option>
-                <option value="host">Host (List properties)</option>
-              </select>
             </div>
 
             <div>

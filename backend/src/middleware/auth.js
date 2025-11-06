@@ -6,12 +6,17 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Check for token in headers
+    // Check for token in headers first (Bearer token)
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+    }
+
+    // If no Bearer token, check for token in cookies
+    if (!token && req.cookies && req.cookies.token) {
+      token = req.cookies.token;
     }
 
     if (!token) {

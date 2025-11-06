@@ -6,6 +6,8 @@ const {
   getCurrentUser,
   updateProfile,
   becomeHost,
+  logout,
+  updateHostPaymentDetails,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
 
@@ -19,8 +21,11 @@ const registerValidation = [
   }),
   check("firstName", "First name is required").not().isEmpty(),
   check("lastName", "Last name is required").not().isEmpty(),
-  check("role").optional().isIn(['user', 'host']).withMessage('Invalid role'),
-  check('phoneNumber').optional().isMobilePhone().withMessage('Invalid phone number')
+  check("role").optional().isIn(["user", "host"]).withMessage("Invalid role"),
+  check("phoneNumber")
+    .optional()
+    .isMobilePhone()
+    .withMessage("Invalid phone number"),
 ];
 
 const loginValidation = [
@@ -32,7 +37,9 @@ const loginValidation = [
 router.post("/register", registerValidation, register);
 router.post("/login", loginValidation, login);
 router.get("/me", protect, getCurrentUser);
+router.post("/logout", protect, logout);
 router.put("/profile", protect, updateProfile);
 router.put("/become-host", protect, becomeHost);
+router.put("/host-payment-details", protect, updateHostPaymentDetails);
 
 module.exports = router;

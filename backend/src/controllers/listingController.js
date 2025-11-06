@@ -23,24 +23,32 @@ const createListing = async (req, res) => {
       "Creating listing with data:",
       JSON.stringify(req.body, null, 2)
     );
-    
+
     // Log the incoming request body for debugging
-    console.log('Raw request body:', req.body);
-    
+    console.log("Raw request body:", req.body);
+
     // Validate required fields
-    if (!req.body.images || !Array.isArray(req.body.images) || req.body.images.length === 0) {
-      return res.status(400).json({ message: 'At least one image is required' });
+    if (
+      !req.body.images ||
+      !Array.isArray(req.body.images) ||
+      req.body.images.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "At least one image is required" });
     }
-    
+
     try {
       const listing = await createListingService(req.user, req.body);
       console.log("Listing created successfully:", listing._id);
       res.status(201).json(listing);
     } catch (error) {
-      console.error('Error in createListingService:', error);
-      res.status(400).json({ 
-        message: error.message || 'Failed to create listing',
-        details: error.errors ? Object.values(error.errors).map(e => e.message) : undefined
+      console.error("Error in createListingService:", error);
+      res.status(400).json({
+        message: error.message || "Failed to create listing",
+        details: error.errors
+          ? Object.values(error.errors).map((e) => e.message)
+          : undefined,
       });
     }
   } catch (error) {
@@ -113,6 +121,41 @@ const getHostListings = async (req, res) => {
   }
 };
 
+// @desc    Get host contact information for a listing
+// @route   GET /api/listings/:id/host-contact
+// @access  Public (but returns limited info)
+const getHostContact = async (req, res) => {
+  try {
+    const Listing = require("../models/Listing");
+    const listingWithHost = await Listing.findById(req.params.id).populate(
+      "host",
+      "firstName lastName phoneNumber email"
+    );
+
+    if (!listingWithHost) {
+      return res.status(404).json({ message: "Listing not found" });
+    }
+
+    if (!listingWithHost.host) {
+      return res.status(404).json({ message: "Host information not found" });
+    }
+
+    const hostInfo = {
+      hostId: listingWithHost.host._id,
+      firstName: listingWithHost.host.firstName,
+      lastName: listingWithHost.host.lastName,
+      phoneNumber: listingWithHost.host.phoneNumber,
+      email: listingWithHost.host.email,
+      listingTitle: listingWithHost.title,
+      listingId: listingWithHost._id,
+    };
+
+    res.json(hostInfo);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   createListing,
   getListings,
@@ -120,4 +163,5 @@ module.exports = {
   updateListing,
   deleteListing,
   getHostListings,
+  getHostContact,
 };
